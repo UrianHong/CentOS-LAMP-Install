@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Centos-lamp-install : How to install LAMP(Apache+PHP5+MySQL) in CentOS6.5">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Centos-lamp-install</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/UrianHong/CentOS-LAMP-Install">View on GitHub</a>
+
+          <h1 id="project_title">Centos-lamp-install</h1>
+          <h2 id="project_tagline">How to install LAMP(Apache+PHP5+MySQL) in CentOS6.5</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/UrianHong/CentOS-LAMP-Install/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/UrianHong/CentOS-LAMP-Install/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <p>准备篇：<br></p>
+
+<p>1、配置防火墙，开启80端口、3306端口<br>
+<code>vi /etc/sysconfig/iptables</code><br>
+<code>-A INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT</code> #允许80端口通过防火墙<br>
+<code>-A INPUT -m state --state NEW -m tcp -p tcp --dport 3306 -j ACCEPT</code> #允许3306端口通过防火墙<br></p>
+
+<p>备注：很多网友把这两条规则添加到防火墙配置的最后一行，导致防火墙启动失败,正确的应该是添加到默认的22端口这条规则的下面<br></p>
+
+<p>如下所示：<br></p>
+
+<h6>
+<a id="" class="anchor" href="#" aria-hidden="true"><span class="octicon octicon-link"></span></a>##################################################<br>
+</h6>
+
+<p><code># Firewall configuration written by system-config-firewall</code><br>
+<code># Manual customization of this file is not recommended.</code><br>
+<code>*filter</code><br>
+<code>:INPUT ACCEPT [0:0]</code><br>
+<code>:FORWARD ACCEPT [0:0]</code><br>
+<code>:OUTPUT ACCEPT [0:0]</code><br>
+<code>-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT</code><br>
+<code>-A INPUT -p icmp -j ACCEPT</code><br>
+<code>-A INPUT -i lo -j ACCEPT</code><br>
+<code>-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT</code><br>
+<code>-A INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT</code><br>
+<code>-A INPUT -m state --state NEW -m tcp -p tcp --dport 3306 -j ACCEPT</code><br>
+<code>-A INPUT -j REJECT --reject-with icmp-host-prohibited</code><br>
+<code>-A FORWARD -j REJECT --reject-with icmp-host-prohibited</code><br>
+<code>COMMIT</code><br></p>
+
+<h6>
+<a id="-1" class="anchor" href="#-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>##################################################<br>
+</h6>
+
+<p><code>/etc/init.d/iptables restart</code> #重启防火墙使配置生效<br></p>
+
+<p>2、关闭SELINUX<br>
+<code>vi /etc/selinux/config</code><br>
+<code>#SELINUX=enforcing</code> #注释掉<br>
+<code>#SELINUXTYPE=targeted</code> #注释掉<br>
+<code>SELINUX=disabled</code> #增加<br>
+<code>:wq!</code>#保存退出<br>
+<code>shutdown -r now</code>#重启系统<br></p>
+
+<p>安装篇：<br></p>
+
+<p>一、安装Apache<br>
+<code>yum install httpd</code> #根据提示，输入Y安装即可成功安装<br>
+<code>/etc/init.d/httpd start</code>#启动Apache<br>
+备注：Apache启动之后会提示错误：<br>
+正在启动 httpd:httpd: Could not reliably determine the server's fully qualif domain name, using ::1 for ServerName<br>
+解决办法：<br>
+<code>vi /etc/httpd/conf/httpd.conf</code> #编辑<br>
+找到 #ServerName <a href="http://www.example.com:80">www.example.com:80</a><br>
+修改为 ServerName <a href="http://www.uiran.org:80">www.uiran.org:80</a> #这里设置为你自己的域名，如果没有域名，可以设置为localhost<br>
+<code>:wq!</code> #保存退出<br>
+<code>chkconfig httpd on</code> #设为开机启动<br>
+<code>/etc/init.d/httpd restart</code> #重启Apache<br></p>
+
+<p>二、安装MySQL<br></p>
+
+<p>1、安装MySQL<br>
+<code>yum install mysql mysql-server</code> #询问是否要安装，输入Y即可自动安装,直到安装完成<br>
+<code>/etc/init.d/mysqld start</code> #启动MySQL<br>
+<code>chkconfig mysqld on</code> #设为开机启动<br>
+<code>cp /usr/share/mysql/my-medium.cnf /etc/my.cnf</code> #拷贝配置文件（注意：如果/etc目录下面默认有一个my.cnf，直接覆盖即可）<br></p>
+
+<p>2、为root账户设置密码<br>
+<code>mysql_secure_installation</code><br>
+回车，根据提示输入Y<br>
+输入2次密码，回车<br>
+根据提示一路输入Y<br>
+最后出现：Thanks for using MySQL!<br>
+MySql密码设置完成，重新启动 MySQL：<br>
+<code>/etc/init.d/mysqld restart</code> #重启<br>
+<code>/etc/init.d/mysqld stop</code> #停止<br>
+<code>/etc/init.d/mysqld start</code> #启动<br></p>
+
+<p>三、安装PHP5<br></p>
+
+<p>1、安装PHP5<br></p>
+
+<p><code>yum install php</code> #根据提示输入Y直到安装完成<br></p>
+
+<p>2、安装PHP组件，使 PHP5 支持 MySQL<br>
+<code>yum install php-mysql php-gd libjpeg* php-imap php-ldap php-odbc php-pear php-xml php-xmlrpc php-mbstring php-mcrypt php-bcmath php-mhash libmcrypt</code> #这里选择以上安装包进行安装，根据提示输入Y回车<br>
+<code>/etc/init.d/mysqld restart</code> #重启MySql<br>
+<code>/etc/init.d/httpd restart</code> #重启Apche<br></p>
+
+<p>配置篇<br></p>
+
+<p>一、Apache配置<br>
+<code>vi /etc/httpd/conf/httpd.conf</code> #编辑文件<br>
+<code>ServerTokens OS</code>　 #在44行 修改为：ServerTokens Prod （在出现错误页的时候不显示服务器操作系统的名称）<br>
+<code>ServerSignature On</code>　 #在536行 修改为：ServerSignature Off （在错误页中不显示Apache的版本）<br>
+<code>Options Indexes FollowSymLinks</code>　 #在331行 修改为：Options Includes ExecCGI FollowSymLinks（允许服务器执行CGI及SSI，禁止列出目录）<br>
+<code>#AddHandler cgi-script .cgi</code>　#在796行 修改为：AddHandler cgi-script .cgi .pl （允许扩展名为.pl的CGI脚本运行）<br>
+<code>AllowOverride None</code>　 #在338行 修改为：AllowOverride All （允许.htaccess）<br>
+<code>AddDefaultCharset UTF-8</code>　#在759行 修改为：AddDefaultCharset GB2312　（添加GB2312为默认编码）<br>
+<code>Options Indexes MultiViews FollowSymLinks</code> #在554行 修改为 Options MultiViews FollowSymLinks（不在浏览器上显示树状目录结构）<br>
+<code>DirectoryIndex index.html index.html.var</code> #在402行 修改为：DirectoryIndex index.html index.htm Default.html Default.htm <br><code>index.php Default.php index.html.var</code> （设置默认首页文件，增加index.php）<br>
+<code>KeepAlive Off</code> #在76行 修改为：KeepAlive On （允许程序性联机）<br>
+<code>MaxKeepAliveRequests 100</code> #在83行 修改为：MaxKeepAliveRequests 1000 （增加同时连接数）<br>
+<code>:wq!</code>#保存退出<br>
+<code>/etc/init.d/httpd restart</code>#重启<br>
+<code>rm -f /etc/httpd/conf.d/welcome.conf /var/www/error/noindex.html</code> #删除默认测试页<br></p>
+
+<p>二、php配置<br>
+<code>vi /etc/php.ini</code> #编辑<br>
+<code>date.timezone = PRC</code>#在946行 把前面的分号去掉，改为date.timezone = PRC<br>
+<code>disable_functions = passthru,exec,system,chroot,scandir,chgrp,chown,shell_exec,proc_open,proc_get_status,ini_alter,ini_alter,ini_restore,dl,openlog,syslog,readlink,symlink,popepassthru,stream_socket_server,escapeshellcmd,dll,popen,disk_free_space,checkdnsrr,checkdnsrr,getservbyname,getservbyport,disk_total_space,posix_ctermid,posix_get_last_error,posix_getcwd, posix_getegid,posix_geteuid,posix_getgid, posix_getgrgid,posix_getgrnam,posix_getgroups,posix_getlogin,posix_getpgid,posix_getpgrp,posix_getpid, posix_getppid,posix_getpwnam,posix_getpwuid, posix_getrlimit, posix_getsid,posix_getuid,posix_isatty, posix_kill,posix_mkfifo,posix_setegid,posix_seteuid,posix_setgid, posix_setpgid,posix_setsid,posix_setuid,posix_strerror,posix_times,posix_ttyname,posix_uname</code><br>
+在386行 列出PHP可以禁用的函数，如果某些程序需要用到这个函数，可以删除，取消禁用。<br>
+<code>expose_php = Off</code> #在432行 禁止显示php版本的信息<br>
+<code>magic_quotes_gpc = On</code> #在745行 打开magic_quotes_gpc来防止SQL注入<br>
+<code>short_open_tag = ON</code> #在229行支持php短标签<br>
+<code>open_basedir = .:/tmp/</code> #在380行 设置表示允许访问当前目录(即PHP脚本文件所在之目录)和/tmp/目录,可以防止php木马跨站,如果改了之后安装程序有问题，可以注销此行，或者直接写上程序的目录/data/www.osyunwei.com/:/tmp/<br>
+<code>:wq!</code>#保存退出<br>
+<code>/etc/init.d/mysqld restart</code>#重启MySql<br>
+<code>/etc/init.d/httpd restart</code> #重启Apche<br>
+测试篇<br>
+<code>cd /var/www/html</code><br>
+<code>vi index.php</code> #编辑输入下面内容<br>
+<code>&lt;?php</code><br>
+<code>phpinfo();</code><br>
+<code>?&gt;</code><br>
+:wq! #保存退出<br>
+在客户端浏览器输入服务器IP地址，可以看到相关的配置信息！<br></p>
+
+<p>phpMyAdmin常见问题<br>
+1. phpmyadmin提示未开启php-mcrypt,这是因为没有安装php-mrcrpt扩展。在官方源没有php-mrcrpt扩展，请安装epel源后再yum install php-mcrypt<br></p>
+
+<ol>
+<li>phpmyadmin无法访问<br>
+</li>
+</ol>
+
+<p>phpmyadmin默认只能使用http://localhost/phpmyadmin来访问，可以修改/etc/httpd/conf.d/phpmyadmin.conf中对应部分为<br>
+<code>&lt;Directory "/usr/share/phpmyadmin"&gt;</code><br>
+<code>Order Deny,Allow</code><br>
+<code># Deny from all</code><br>
+<code>Allow from All</code><br>
+<br>
+不过强烈不支持这么做的，把phpmyadmin暴露了不安全<br></p>
+
+<p>注意：<br>
+apache解析php，修改httpd.conf文件，添加<br>
+<code>Addtype application/x-httpd-php .php .phtml</code><br>
+<code>Addtype application/x-httpd-php-source .phps</code><br></p>
+
+<p>myql可以远程登录<br>
+设置mysql密码<br>
+<code>mysql&gt;; USE mysql;</code><br>
+<code>mysql&gt;; UPDATE user SET Password=PASSWORD('newpassword') WHERE user='root';</code><br>
+<code>mysql&gt;; FLUSH PRIVILEGES;</code><br>
+1.2.3 允许远程登录<br>
+<code>mysql -u root -p</code><br>
+<code>Enter Password: &lt;your new password&gt;</code><br>
+<code>mysql&gt;GRANT ALL PRIVILEGES ON *.* TO '用户名'@'%' IDENTIFIED BY '密码' WITH GRANT OPTION;</code><br>
+完成后就能用mysql-front远程管理mysql了。<br>
+设为开机启动<br>
+<code>chkconfig mysqld on</code><br></p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Centos-lamp-install maintained by <a href="https://github.com/UrianHong">UrianHong</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
